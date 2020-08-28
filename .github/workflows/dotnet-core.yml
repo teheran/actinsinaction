@@ -1,11 +1,16 @@
 name: .NET Core
 
-on:
+on:  
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  workflow_dispatch:
 
+defaults:
+  run:
+    working-directory: App
+    
 jobs:
   build:
 
