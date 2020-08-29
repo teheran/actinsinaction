@@ -26,4 +26,4 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         repository: teheran/mariner
         tag_with_ref: true
-        path: .\App
+        path: App
