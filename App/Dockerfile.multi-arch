@@ -1,0 +1,47 @@
+ARG DOTNETCORE_VERSION=3.1
+FROM --platform=${BUILDPLATFORM} mcr.microsoft.com/dotnet/core/sdk:${DOTNETCORE_VERSION} AS dotnet-build
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT
+ARG BUILDPLATFORM
+ARG DOTNETCORE_VERSION
+
+# linux/amd64, linux/arm64, linux/ppc64le, linux/s390x, linux/386, linux/arm/v7, linux/arm/v6
+
+# NOT TESTED
+# # https://github.com/dotnet/dotnet-docker/blob/master/samples/dotnetapp/Dockerfile.alpine-arm64
+# FROM dotnet-build AS dotnet-build-linux-arm64-
+# ARG RID=linux-musl-arm64
+# FROM mcr.microsoft.com/dotnet/core/runtime:${DOTNETCORE_VERSION}-alpine-arm64v8 AS dotnet-runtime-linux-arm64-
+
+#https://github.com/dotnet/dotnet-docker/blob/master/samples/dotnetapp/Dockerfile.alpine-x64-slim
+FROM dotnet-build AS dotnet-build-linux-amd64-
+ARG RID=linux-musl-x64
+FROM mcr.microsoft.com/dotnet/core/runtime-deps:${DOTNETCORE_VERSION}-alpine AS dotnet-runtime-linux-amd64-
+
+#https://github.com/dotnet/core/blob/master/samples/RaspberryPiInstructions.md: FIXME: Raspberry Pi 2+
+FROM dotnet-build AS dotnet-build-linux-arm-v7
+ARG RID=linux-arm
+FROM mcr.microsoft.com/dotnet/core/runtime-deps:${DOTNETCORE_VERSION} AS dotnet-runtime-linux-arm-v7
+
+FROM dotnet-build-${TARGETOS}-${TARGETARCH}-${TARGETVARIANT} AS build
+WORKDIR /source
+# copy csproj and restore as distinct layers
+COPY *.csproj .
+RUN dotnet restore -r ${RID}
+# copy and publish app and libraries
+COPY . .
+RUN dotnet publish \
+  --runtime ${RID} \
+  --self-contained true \
+  /p:PublishTrimmed=true \
+  /p:PublishSingleFile=true \
+  -c Release \
+  -o /app \
+  --no-restore
+
+FROM --platform=${TARGETPLATFORM} dotnet-runtime-${TARGETOS}-${TARGETARCH}-${TARGETVARIANT}
+WORKDIR /app
+COPY --from=build /app .
+ENTRYPOINT ["./NetCore.Docker"]
