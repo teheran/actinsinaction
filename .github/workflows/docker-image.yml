@@ -25,7 +25,8 @@ jobs:
     - name: Docker Buildx
       uses: crazy-max/ghaction-docker-buildx@v3.3.0
     - name: puild and push Docker images
-      run: docker buildx build --push \
+      run: | 
+        docker buildx build --push \
            --file Dockerfile.multi-arch \
            --tag teheran/mariner \
            --platform linux/amd64,linux/arm/v7 .
